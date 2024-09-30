@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tải lên hình ảnh</title>
+    <link rel="stylesheet" href="../public/style.css">
+</head>
+<body>
+    <h1>Tải lên hình ảnh</h1>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="images" accept="image/*" multiple required>
+        <button type="submit">Tải lên</button>
+    </form>
+</body>
+</html>
