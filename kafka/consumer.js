@@ -16,7 +16,6 @@ const {NUMBER_OF_ASYNC} = require("../constants/constants")
 //     callback();
 // }, NUMBER_OF_ASYNC);
 
-
 function consumeMessages(instanceId=0) {
     const topics = [
         { topic: 'ocr_topic' },
@@ -39,24 +38,12 @@ function consumeMessages(instanceId=0) {
 
         switch (message.topic) {
             case 'ocr_topic':
-                // queue.push(async () => {
-                //     await ocrFilter(parsedMessage);
-                //     console.log(`Processed OCR message for instance ${instanceId}`);
-                // });
                 await ocrFilter(parsedMessage);
                 break;
             case 'translate_topic':
-                // queue.push(async () => {
-                //     await translateFilter(parsedMessage);
-                //     console.log(`Processed translate message for instance ${instanceId}`);
-                // });
                 await translateFilter(parsedMessage);
                 break;
             case 'pdf_topic':
-                // queue.push(async () => {
-                //     const pdfFilePath = await pdfFilter(parsedMessage);
-                //     console.log(`Processed PDF message for instance ${instanceId}, output path: ${pdfFilePath}`);
-                // });
                 await pdfFilter(parsedMessage);
                 break;
         }
