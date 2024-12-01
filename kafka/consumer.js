@@ -30,8 +30,6 @@ function consumeMessages(instanceId=0) {
 
     console.log(`Consumer instance ${instanceId} is running...`);
 
-    // console.log("Hello")
-
     consumer.on('message', async (message) => {
         
         const parsedMessage = JSON.parse(message.value);

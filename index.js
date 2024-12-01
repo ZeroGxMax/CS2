@@ -63,7 +63,7 @@ app.post("/upload", upload.array("images"), async (req, res) => {
         let file, imagePath, imageName;
         for (let i = 0; i < req.files.length; i++) {
             file = req.files.at(i)
-            console.log("Processing file:", file);
+            // console.log("Processing file:", file);
             imagePath = path.join(__dirname, 'uploads', file.filename);
             imageName = path.basename(file.filename, path.extname(file.filename));
             await sendMessage('ocr_topic', { imagePath, imageName });
