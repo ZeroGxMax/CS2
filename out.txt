@@ -17,3 +17,6 @@ selected font, how the letters are written and an impression of the look.
 This text should contain all letters of the alphabet and it should be
 written in of the original language. There is no need for special content,
 but the length of words should match the language.
+
+
+cpulimit -l 800 -- node index.js

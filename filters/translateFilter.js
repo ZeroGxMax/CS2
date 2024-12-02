@@ -11,12 +11,17 @@ let pLimit; // Placeholder for dynamically imported `pLimit`
 })();
 
 async function translateFilter({ text, imageName }) {
+    const start = Date.now();
     try {
         const limit = pLimit(NUMBER_OF_TRANS_CONSUMER); // Initialize the concurrency limit
-        const translatedText = await limit(() => translate(text)); // Concurrency control
+        const translatedText = await limit(() => translate(text));
+        // const translatedText = translate(text);
         await sendMessage('pdf_topic', { translatedText, imageName });
     } catch (error) {
         console.error("Translate Filter Error:", error);
+    } finally {
+        const duration = Date.now() - start; // Calculate processing time
+        // console.log(`Translate Filter processed message in ${duration}ms`);
     }
 }
 

@@ -4,12 +4,16 @@ const ocrFilter = require("../filters/ocrFilter");
 const translateFilter = require("../filters/translateFilter");
 const pdfFilter = require("../filters/pdfFilter");
 const EventEmitter = require('events');
+const Queue = require('bull');
 
 const eventEmitter = new EventEmitter();
+const ocrQueue = new Queue('ocr-queue');
+const translateQueue = new Queue('translate-queue');
+const pdfQueue = new Queue('pdf-queue');
 
 function consumeMessages(instanceId = 0, topic) {
     // const topics = [
-    //     'ocr_topic',  // Specific partition of ocr_topic
+    //     'ocr_topic',
     //     'translate_topic',                     // Entire topic
     //     'pdf_topic'                            // Entire topic
     // ];
@@ -35,20 +39,21 @@ function consumeMessages(instanceId = 0, topic) {
             isFirstMessage = false; // Prevent further logging
             eventEmitter.emit('firstMessage'); // Notify when the first message is consumed
         }
-        console.log(message)
+
         try {
             // console.log(message)
             const parsedMessage = JSON.parse(message.value);
 
             switch (message.topic) {
                 case 'ocr_topic':
-                    await ocrFilter(parsedMessage);
+                    await ocrQueue.add(parsedMessage);
                     break;
                 case 'translate_topic':
-                    await translateFilter(parsedMessage);
+
+                    await translateQueue.add(parsedMessage);
                     break;
                 case 'pdf_topic':
-                    await pdfFilter(parsedMessage);
+                    await pdfQueue.add(parsedMessage);
                     break;
             }
         } catch (err) {
