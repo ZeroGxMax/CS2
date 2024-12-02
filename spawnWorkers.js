@@ -3,8 +3,8 @@ const path = require('path');
 
 // Number of workers to spawn
 const NUM_OCR_WORKERS = 12;
-const NUM_TRANSLATE_WORKERS = 3;
-const NUM_PDF_WORKERS = 1;
+const NUM_TRANSLATE_WORKERS = 1;
+// const NUM_PDF_WORKERS = 1;
 
 // Paths to worker scripts
 const ocrWorkerPath = path.resolve(__dirname, './workers/ocrWorker.js');
@@ -40,4 +40,4 @@ spawnWorkers(NUM_OCR_WORKERS, ocrWorkerPath, 'OCR');
 // Spawn Translate Workers
 spawnWorkers(NUM_TRANSLATE_WORKERS, translateWorkerPath, 'Translate');
 
-spawnWorkers(NUM_PDF_WORKERS, pdfWorkerPath, 'PDF');
+// spawnWorkers(NUM_PDF_WORKERS, pdfWorkerPath, 'PDF');

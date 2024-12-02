@@ -74,19 +74,24 @@ app.post("/upload", upload.array("images"), async (req, res) => {
         } catch (error) {
             console.error('Error sending messages:', error);
         }
+
+        for (let i = 0; i < NUMBER_OF_CONSUMER_INSTANCES; i++) {
+            const consumer = consumeMessages(i);
+            consumers.push(consumer);
+        }
         
-        for (let i = 0; i < NUMBER_OF_OCR_CONSUMER; i++) {
-            const consumer = consumeMessages(i, 'ocr_topic');
-            consumers.push(consumer);
-        }
-        for (let i = 0; i < NUMBER_OF_TRANS_CONSUMER; i++) {
-            const consumer = consumeMessages(i, 'translate_topic');
-            consumers.push(consumer);
-        }
-        for (let i = 0; i < NUMBER_OF_PDF_CONSUMER; i++) {
-            const consumer = consumeMessages(i, 'pdf_topic');
-            consumers.push(consumer);
-        }
+        // for (let i = 0; i < NUMBER_OF_OCR_CONSUMER; i++) {
+        //     const consumer = consumeMessages(i, 'ocr_topic');
+        //     consumers.push(consumer);
+        // }
+        // for (let i = 0; i < NUMBER_OF_TRANS_CONSUMER; i++) {
+        //     const consumer = consumeMessages(i, 'translate_topic');
+        //     consumers.push(consumer);
+        // }
+        // for (let i = 0; i < NUMBER_OF_PDF_CONSUMER; i++) {
+        //     const consumer = consumeMessages(i, 'pdf_topic');
+        //     consumers.push(consumer);
+        // }
         let startTime;
         eventEmitter.once('firstMessage', () => {
             startTime = new Date();

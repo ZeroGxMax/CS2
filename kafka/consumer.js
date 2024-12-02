@@ -11,12 +11,12 @@ const ocrQueue = new Queue('ocr-queue');
 const translateQueue = new Queue('translate-queue');
 const pdfQueue = new Queue('pdf-queue');
 
-function consumeMessages(instanceId = 0, topic) {
-    // const topics = [
-    //     'ocr_topic',
-    //     'translate_topic',                     // Entire topic
-    //     'pdf_topic'                            // Entire topic
-    // ];
+function consumeMessages(instanceId = 0) {
+    const topics = [
+        'ocr_topic',
+        'translate_topic',                     // Entire topic
+        'pdf_topic'                            // Entire topic
+    ];
     const consumerGroupOptions = {
         kafkaHost: 'localhost:9092', // Kafka broker address
         // groupId: `${topic}_ocr_consumer_group_2`, // Consumer group ID
@@ -29,13 +29,13 @@ function consumeMessages(instanceId = 0, topic) {
 
     let isFirstMessage = true;
 
-    const consumerGroup = new ConsumerGroup(consumerGroupOptions, [topic]);
+    const consumerGroup = new ConsumerGroup(consumerGroupOptions, topics);
     // console.log(consumerGroup);
 
-    console.log(`Consumer instance ${instanceId} on ${topic} is running...`);
+    console.log(`Consumer instance ${instanceId} is running...`);
 
     consumerGroup.on('message', async (message) => {
-        if (isFirstMessage && topic == 'ocr_topic') {
+        if (isFirstMessage) {
             isFirstMessage = false; // Prevent further logging
             eventEmitter.emit('firstMessage'); // Notify when the first message is consumed
         }
@@ -49,11 +49,11 @@ function consumeMessages(instanceId = 0, topic) {
                     await ocrQueue.add(parsedMessage);
                     break;
                 case 'translate_topic':
-
                     await translateQueue.add(parsedMessage);
                     break;
                 case 'pdf_topic':
-                    await pdfQueue.add(parsedMessage);
+                    pdfFilter(parsedMessage)
+                    // await pdfQueue.add(parsedMessage);
                     break;
             }
         } catch (err) {
