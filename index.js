@@ -6,11 +6,11 @@ const multer = require("multer")
 const express = require("express")
 const {ocrFilter} = require("./filters/ocrFilter")
 const {sendMessage} = require("./kafka/producer")
-const {consumeMessages} = require("./kafka/consumer.js")
+const {consumeMessages, eventEmitter} = require("./kafka/consumer.js")
 const {waitForFile} = require("./utils/waitForFile")
 const archiver = require('archiver');
 const fs = require("fs");
-const {NUMBER_OF_CONSUMER_INSTANCES} = require("./constants/constants")
+const {NUMBER_OF_CONSUMER_INSTANCES, NUMBER_OF_OCR_CONSUMER, NUMBER_OF_PDF_CONSUMER, NUMBER_OF_TRANS_CONSUMER} = require("./constants/constants")
 
 const app = express();
 
@@ -54,21 +54,44 @@ app.post("/upload", upload.array("images"), async (req, res) => {
     }
 
     const pdfFilePaths = [];
+    const consumers = [];
     
     try {
-        for (let i = 0; i < NUMBER_OF_CONSUMER_INSTANCES; i++) {
-            consumeMessages(i);
-        }
         
         let file, imagePath, imageName;
-        for (let i = 0; i < req.files.length; i++) {
-            file = req.files.at(i)
-            // console.log("Processing file:", file);
-            imagePath = path.join(__dirname, 'uploads', file.filename);
-            imageName = path.basename(file.filename, path.extname(file.filename));
-            await sendMessage('ocr_topic', { imagePath, imageName });
+        const promises = req.files.map((file) => {
+            const imagePath = path.join(__dirname, 'uploads', file.filename);
+            const imageName = path.basename(file.filename, path.extname(file.filename));
+        
+            // Send message concurrently
+            return sendMessage('ocr_topic', { imagePath, imageName });
+        });
+        
+        try {
+            // Wait for all messages to be sent
+            await Promise.all(promises);
+            console.log('All files processed and messages sent to ocr_topic.');
+        } catch (error) {
+            console.error('Error sending messages:', error);
         }
-        console.time("TotalProcessingTime");
+        
+        for (let i = 0; i < NUMBER_OF_OCR_CONSUMER; i++) {
+            const consumer = consumeMessages(i, 'ocr_topic');
+            consumers.push(consumer);
+        }
+        for (let i = 0; i < NUMBER_OF_TRANS_CONSUMER; i++) {
+            const consumer = consumeMessages(i, 'translate_topic');
+            consumers.push(consumer);
+        }
+        for (let i = 0; i < NUMBER_OF_PDF_CONSUMER; i++) {
+            const consumer = consumeMessages(i, 'pdf_topic');
+            consumers.push(consumer);
+        }
+        let startTime;
+        eventEmitter.once('firstMessage', () => {
+            startTime = new Date();
+            console.log(`Start Time: ${startTime}`);
+        });
 
         for (let i = 0; i < req.files.length; i++) {
             file = req.files.at(i)
@@ -78,7 +101,7 @@ app.post("/upload", upload.array("images"), async (req, res) => {
             await waitForFile(pdfFilePath);
 
             if (req.files.length == 1) {
-                console.timeEnd("TotalProcessingTime");
+                // console.timeEnd("TotalProcessingTime");
                 res.download(pdfFilePath, `${imageName}.pdf`, (err) => {
                     if (err) {
                         console.error("Error downloading the PDF file:", err);
@@ -91,7 +114,12 @@ app.post("/upload", upload.array("images"), async (req, res) => {
             }
         }
         
-        console.timeEnd("TotalProcessingTime"); 
+        const endTime = new Date();
+        console.log(`End Time: ${endTime}`);
+        var time_consuming = (endTime - startTime) / 1000;
+        console.log(`Time consumed: ${time_consuming.toFixed(2)} seconds`);
+
+        // await Promise.all(consumers.map((consumer) => consumer.close()));
         const zipFilePath = path.join(__dirname, 'output', 'all_pdfs.zip');
         const output = fs.createWriteStream(zipFilePath);
         const archive = archiver('zip', {

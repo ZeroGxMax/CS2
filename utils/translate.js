@@ -4,6 +4,7 @@ translator.supportedLanguages();
 
 function translate(text) {
     return new Promise((resolve, reject) => {
+        // resolve(text)
         translator
             .TranslateLanguageData({
                 listOfWordsToTranslate: [text],

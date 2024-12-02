@@ -2,7 +2,7 @@ const fs = require('fs');
 
 function waitForFile(filePath, timeout = 300000) {
     return new Promise((resolve, reject) => {
-        const interval = 2;
+        const interval = 1;
         const endTime = Date.now() + timeout;
 
         const checkFile = setInterval(() => {

@@ -1,59 +1,71 @@
 const kafka = require('kafka-node');
-const Consumer = kafka.Consumer;
-const client = new kafka.KafkaClient({ kafkaHost: 'localhost:9092' });
+const ConsumerGroup = kafka.ConsumerGroup;
 const ocrFilter = require("../filters/ocrFilter");
 const translateFilter = require("../filters/translateFilter");
 const pdfFilter = require("../filters/pdfFilter");
-const async = require('async');
-const {NUMBER_OF_ASYNC} = require("../constants/constants")
+const EventEmitter = require('events');
 
-// const queue = async.queue(async (task, callback) => {
-//     try {
-//         await task();
-//     } catch (error) {
-//         console.error("Error processing task:", error);
-//     }
-//     callback();
-// }, NUMBER_OF_ASYNC);
+const eventEmitter = new EventEmitter();
 
-function consumeMessages(instanceId=0) {
-    const topics = [
-        { topic: 'ocr_topic' },
-        { topic: 'translate_topic' },
-        { topic: 'pdf_topic' }
-    ];
-    const consumerOptions = {
-        groupId: 'ocr_consumer_group',
-        autoCommit: true
+function consumeMessages(instanceId = 0, topic) {
+    // const topics = [
+    //     'ocr_topic',  // Specific partition of ocr_topic
+    //     'translate_topic',                     // Entire topic
+    //     'pdf_topic'                            // Entire topic
+    // ];
+    const consumerGroupOptions = {
+        kafkaHost: 'localhost:9092', // Kafka broker address
+        // groupId: `${topic}_ocr_consumer_group_2`, // Consumer group ID
+        groupId: `ocr_consumer_group_1`, // Consumer group ID
+        autoCommit: true, // Automatically commit offsets
+        fromOffset: 'latest', // Start from the latest offset
+        sessionTimeout: 15000, // Session timeout for consumers
+        protocol: ['roundrobin'], // Partition assignment strategy
     };
-    const consumer = new Consumer(client, topics, consumerOptions);
 
-    console.log(`Consumer instance ${instanceId} is running...`);
+    let isFirstMessage = true;
 
-    consumer.on('message', async (message) => {
-        
-        const parsedMessage = JSON.parse(message.value);
+    const consumerGroup = new ConsumerGroup(consumerGroupOptions, [topic]);
+    // console.log(consumerGroup);
 
-        switch (message.topic) {
-            case 'ocr_topic':
-                await ocrFilter(parsedMessage);
-                break;
-            case 'translate_topic':
-                await translateFilter(parsedMessage);
-                break;
-            case 'pdf_topic':
-                await pdfFilter(parsedMessage);
-                break;
+    console.log(`Consumer instance ${instanceId} on ${topic} is running...`);
+
+    consumerGroup.on('message', async (message) => {
+        if (isFirstMessage && topic == 'ocr_topic') {
+            isFirstMessage = false; // Prevent further logging
+            eventEmitter.emit('firstMessage'); // Notify when the first message is consumed
+        }
+        console.log(message)
+        try {
+            // console.log(message)
+            const parsedMessage = JSON.parse(message.value);
+
+            switch (message.topic) {
+                case 'ocr_topic':
+                    await ocrFilter(parsedMessage);
+                    break;
+                case 'translate_topic':
+                    await translateFilter(parsedMessage);
+                    break;
+                case 'pdf_topic':
+                    await pdfFilter(parsedMessage);
+                    break;
+            }
+        } catch (err) {
+            console.error("Error processing message:", err);
         }
     });
 
-    consumer.on('error', (err) => {
-        console.error("Kafka Consumer error:", err);
+    consumerGroup.on('error', (err) => {
+        console.error("Kafka ConsumerGroup error:", err);
     });
+    return consumerGroup;
 }
 
-// consumeMessages()
+// Uncomment the line below to run the consumer directly
+// consumeMessages();
 
 module.exports = {
-    consumeMessages
+    consumeMessages,
+    eventEmitter
 };
