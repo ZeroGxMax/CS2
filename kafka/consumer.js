@@ -39,6 +39,7 @@ function consumeMessages(instanceId = 0) {
             isFirstMessage = false; // Prevent further logging
             eventEmitter.emit('firstMessage'); // Notify when the first message is consumed
         }
+        // consumerGroup.pause();
 
         try {
             // console.log(message)
@@ -52,12 +53,14 @@ function consumeMessages(instanceId = 0) {
                     await translateQueue.add(parsedMessage);
                     break;
                 case 'pdf_topic':
-                    pdfFilter(parsedMessage)
-                    // await pdfQueue.add(parsedMessage);
+                    // pdfFilter(parsedMessage)
+                    await pdfQueue.add(parsedMessage);
                     break;
             }
         } catch (err) {
             console.error("Error processing message:", err);
+        } finally {
+            // consumerGroup.resume(); // Resume fetching new messages
         }
     });
 

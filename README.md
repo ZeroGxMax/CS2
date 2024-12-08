@@ -23,3 +23,56 @@ $ npm start
 ## Yêu cầu
  - Hoàn thiện chương trình sử dụng `express.js` cho phép upload một file ảnh và trả về một file `pdf` tương ứng
  - Sử dụng `Pipes and Filters pattern` và `message queue` để hoàn thiện chương trình trên.
+
+
+# Hướng Dẫn Chạy Hệ Thống
+
+## 1. Cài Đặt Kafka  
+- Tải Kafka từ Confluent tại [đây](https://docs.confluent.io/platform/current/installation/installing_cp/zip-tar.html).  
+
+---
+
+## 2. Khởi Chạy Kafka Server  
+Mở terminal và thực hiện các lệnh sau:
+
+```bash
+# Khởi chạy Zookeeper
+$KAFKA_HOME/bin/zookeeper-server-start $KAFKA_HOME/etc/kafka/zookeeper-bash.properties
+
+# Khởi chạy Kafka Server
+$KAFKA_HOME/bin/kafka-server-start $KAFKA_HOME/etc/kafka/server-0-1.properties
+
+# Tạo topic OCR
+$KAFKA_HOME/bin/kafka-topics --create --bootstrap-server localhost:9092 --topic ocr_topic --partitions 10 --replication-factor 1
+
+# Tạo topic Translate
+$KAFKA_HOME/bin/kafka-topics --create --bootstrap-server localhost:9092 --topic translate_topic --partitions 10 --replication-factor 1
+
+# Tạo topic PDF
+$KAFKA_HOME/bin/kafka-topics --create --bootstrap-server localhost:9092 --topic pdf_topic --partitions 10 --replication-factor 1
+
+```
+
+## 3. Cài Đặt Thư Viện
+Cài đặt các thư viện cần thiết bằng lệnh:
+```bash
+npm install
+```
+
+## 4. Khởi Chạy Worker
+Chạy file sau để khởi tạo các worker:
+```bash
+node spawnWorkers
+```
+
+## 5. Chạy Ứng Dụng Chính
+Chạy ứng dụng bằng lệnh:
+```bash
+node index.js
+```
+
+## 6. Tải Ảnh và Xử Lý
+Truy cập địa chỉ `localhost:3000`, upload ảnh cần OCR và chờ kết quả.
+
+## 7. Xem Kết Quả
+Kết quả sẽ được lưu trong thư mục `output`.
